@@ -1,0 +1,58 @@
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+    <bean id="users" class="org.geoserver.egeosmanager.Users"/>
+    <bean id="groups" class="org.geoserver.egeosmanager.Groups"/>
+    <bean id="members" class="org.geoserver.egeosmanager.Members"/>
+    <bean id="roles" class="org.geoserver.egeosmanager.Roles"/>
+    <bean id="userrolerefs" class="org.geoserver.egeosmanager.UserRoleRefs"/>
+    <bean id="grouprolerefs" class="org.geoserver.egeosmanager.GroupRoleRefs"/>
+    <bean id="rules" class="org.geoserver.egeosmanager.Rules"/>
+    <bean id="egeoslayers" class="org.geoserver.egeosmanager.Layers"/>
+    
+    <bean id="egeosMapping" class="org.geoserver.rest.RESTMapping">
+       <property name="routes">
+          <map>
+            <entry>
+              <key><value>/users.{format}</value></key>
+              <value>users</value>
+            </entry>
+          
+            <entry>
+              <key><value>/groups.{format}</value></key>
+              <value>groups</value>
+            </entry>
+          
+            <entry>
+              <key><value>/members.{format}</value></key>
+              <value>members</value>
+            </entry>
+          
+            <entry>
+              <key><value>/roles.{format}</value></key>
+              <value>roles</value>
+            </entry>
+          
+            <entry>
+              <key><value>/userrolerefs.{format}</value></key>
+              <value>userrolerefs</value>
+            </entry>
+          
+            <entry>
+              <key><value>/grouprolerefs.{format}</value></key>
+              <value>grouprolerefs</value>
+            </entry>
+            
+            <entry>
+              <key><value>/rules.{format}</value></key>
+              <value>rules</value>
+            </entry>
+            
+            <entry>
+              <key><value>/workspaces/{workspace}/datastores/{datastore}/featuretypes/{featuretype}/reload</value></key>
+              <value>egeoslayers</value>
+            </entry>
+            
+         </map>
+      </property>
+    </bean>
+</beans>
