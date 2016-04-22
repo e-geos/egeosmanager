@@ -53,7 +53,7 @@ Download and compile it using:
 
 $ mvn clean install
 
-This step will install egs-utils-0.1.jar (version may be different) in maven repository.
+This step will install egs-utils-1.0.jar (version may be different) in maven repository.
 
 Compile EgeosManager by maven:
 
