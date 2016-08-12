@@ -37,38 +37,36 @@ http://xxx.xxx.xxx.xxx:xxxx/geoserver/rest/rules.json
   - POST(workspace,layer,method,role): creates a new rule 
   - DELETE(workspace,layer,method,role): delete a rule 
   
+http://xxx.xxx.xxx.xxx:xxxx/geoserver/rest/layertree.json
+  - GET: returns a list of layers divided by store type
+  
   
 ========
 Requires
 ========
 
-https://github.com/e-geos/egs-utils
+https://github.com/e-geos/egs-utils/releases/tag/v2.0
 
 =======
 Install
 =======
 
-First of all, we need the core library egs-utils (https://github.com/e-geos/egs-utils).
+First of all, we need the core library egs-utils (https://github.com/e-geos/egs-utils/releases/tag/v2.0).
 Download and compile it using:
 
 $ mvn clean install
 
-This step will install egs-utils-1.0.jar (version may be different) in maven repository.
+This step will install egs-utils-2.0.jar in maven repository.
 
 Compile EgeosManager by maven:
 
 $ mvn clean package
 
 If all gets well, you can procede to modify Geoserver (http://geoserver.org).
-Download the stable release (this version is tested for 2.6.0), war package.
+Download the stable release (this version is tested for 2.9.1), war package.
 Open the war with a compress program and add the following file in WEB-INF/lib:
-  - egeosmanager-1.1.jar
-  - egs-utils-1.0.jar
-  - jasypt-1.9.2.jar (taken from maven repository)
-  - commons-codec-1.9.jar (taken from maven repository)
-  - commons-io-2.4.jar (taken from maven repository)
-  - commons-lang3-3.3.2.jar (taken from maven repository)
-  - commons-collections4-4.0.jar (taken from maven repository)
+  - egeosmanager-3.0.jar (taken in target folder)
+  - egs-utils-2.0.jar (taken from maven repository)
 
 All files should be downloaded during compile task, so you should found them 
 in your maven repository. 
