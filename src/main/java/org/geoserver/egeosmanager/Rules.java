@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import org.geoserver.egeosmanager.abstracts.RulesXMLResource;
+import org.geoserver.egeosmanager.annotations.Help;
+import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
 
 /**
@@ -17,7 +19,7 @@ import org.geoserver.rest.format.DataFormat;
  * Rules is a REST Callable for manage rules.
  * 
  */
-
+@Help(text="This method allow to manage rules on Geoserver.")
 public class Rules extends RulesXMLResource{
 	public static String WORKSPACE_KEY="workspace";
 	public static String LAYER_KEY="layer";
@@ -45,6 +47,9 @@ public class Rules extends RulesXMLResource{
 	/*
 	 * Returns the list of rules 
 	 */
+	@Help(
+		text="Returns a JSON object with rule paths as keys and a list of roles as value."		
+	)	
 	protected Object handleGetBody(DataFormat format) throws Exception{
 		return manager.getRules();
 	}
@@ -52,6 +57,18 @@ public class Rules extends RulesXMLResource{
 	/*
 	 * Try to create a rule in layers.default or add all roles to an existing rule 
 	 */
+	@Help(
+		text="Add a role to a rule if exists, otherwise creates a new rule.",
+		requires = {
+			@Parameter(name="workspace",description="the name of the workspace."),
+			@Parameter(name="method",description="the name of the method (r,w,a)."),
+			@Parameter(name="role",description="the name of the role you want to add to the rule."),
+		},
+		optionals = {			
+			@Parameter(name="append",description="this flag avoid a creation of a new rule when no one is found."),
+			@Parameter(name="layer",description="the name of the layer of the rule."),
+		}
+	)		
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String ws = params.get(REQUIRED).get(WORKSPACE_KEY);
 		String md = params.get(REQUIRED).get(METHOD_KEY);
@@ -76,6 +93,18 @@ public class Rules extends RulesXMLResource{
 	/*
 	 * Try to remove a rule or a relation between a rule and a list of roles  
 	 */
+	@Help(
+		text="Try to remove a rule or a relation between a rule and a list of roles.",
+		requires = {
+			@Parameter(name="workspace",description="the name of the workspace."),
+			@Parameter(name="method",description="the name of the method (r,w,a)."),			
+		},
+		optionals = {			
+			@Parameter(name="role",description="the name of the role you want to remove from the rule."),					
+			@Parameter(name="missing",description="this flag allow to ignore if the rule you want to delete doesn't exist."),
+			@Parameter(name="layer",description="the name of the layer of the rule."),
+		}
+	)	
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String res="ok";
 		String ws = params.get(REQUIRED).get(WORKSPACE_KEY);

@@ -1,12 +1,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.geoserver</groupId>
+
 	<artifactId>egeosmanager</artifactId>
-	<name>egeosmanager</name>
+	<name>E-Geos Geoserver Manager</name>
+	<version>3.1</version>
+	<organization>
+		<name>E-Geos (http://www.e-geos.it)</name>
+		<url>http://www.e-geos.it</url>
+	</organization>
+
+	<parent>
+		<groupId>org.geoserver</groupId>
+		<artifactId>web</artifactId>
+		<version>2.9.1</version>
+	</parent>
 
 	<properties>
-		<geoserver.version>2.9.1</geoserver.version>
+		<geoserver.version>${parent.version}</geoserver.version>
 		<java.version>1.8</java.version>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 	</properties>
@@ -15,17 +26,14 @@
 		<dependency>
 			<groupId>org.geoserver</groupId>
 			<artifactId>gs-rest</artifactId>
-			<version>${geoserver.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver</groupId>
-			<artifactId>gs-main</artifactId>
-			<version>${geoserver.version}</version>
+			<artifactId>gs-gwc</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver.web</groupId>
 			<artifactId>gs-web-core</artifactId>
-			<version>${geoserver.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>it.egeos.geoserver</groupId>
@@ -42,6 +50,18 @@
 					<target>${java.version}</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<repositories>
@@ -49,6 +69,24 @@
 			<id>Geoserver Repo</id>
 			<url>http://repo.boundlessgeo.com/main</url>
 		</repository>
+		
+		<repository>
+			<id>osgeo</id>
+			<name>Open Source Geospatial Foundation Repository</name>
+			<url>http://download.osgeo.org/webdav/geotools/</url>
+			<!-- release repository used by geotools (and third-party dependencies) -->
+		</repository>
+
+		<repository>
+			<id>geosolutions</id>
+			<name>geosolutions repository</name>
+			<url>http://maven.geo-solutions.it/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
 	</repositories>
-	<version>3.0</version>
 </project>

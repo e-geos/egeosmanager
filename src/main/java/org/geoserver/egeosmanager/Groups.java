@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.geoserver.egeosmanager.abstracts.UsersXMLResource;
+import org.geoserver.egeosmanager.annotations.Help;
+import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
 
 /**
@@ -13,7 +15,7 @@ import org.geoserver.rest.format.DataFormat;
  * Groups is a REST Resource for groups.
  * 
  */
-
+@Help(text="This method allow to manage groups on Geoserver.")
 public class Groups extends UsersXMLResource {
 	public static String NAME_KEY="name";
 	
@@ -36,6 +38,9 @@ public class Groups extends UsersXMLResource {
 	/*
 	 * Returns the list of groups 
 	 */
+	@Help(
+		text="Returns a JSON array of group names."		
+	)
 	protected Object handleGetBody(DataFormat format) throws Exception{
 		return manager.getGroups();
 	}
@@ -43,6 +48,12 @@ public class Groups extends UsersXMLResource {
 	/*
 	 * Add a group with <name> users.xml
 	 */
+	@Help(
+		text="Creates a new group on Geoserver.",
+		requires = {
+			@Parameter(name="name",description="the name of the group you want to create on geoserver."),
+		}
+	)	
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String name = params.get(REQUIRED).get(NAME_KEY);
 		manager.addGroup(name);
@@ -53,6 +64,12 @@ public class Groups extends UsersXMLResource {
 	/*
 	 * Remove a group with <name> users.xml
 	 */
+	@Help(
+		text="Removes a group on Geoserver.",
+		requires = {
+			@Parameter(name="name",description="the group name you want to delete on geoserver."),
+		}
+	)	
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String name = params.get(REQUIRED).get(NAME_KEY);
 		manager.delGroup(name);

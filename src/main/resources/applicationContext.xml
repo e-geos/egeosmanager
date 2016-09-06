@@ -9,70 +9,62 @@
 	<bean id="rules" class="org.geoserver.egeosmanager.Rules" scope="prototype" />
 	<bean id="layertree" class="org.geoserver.egeosmanager.LayerTree" scope="prototype"> 
 		<constructor-arg ref="catalog"/>
+	</bean>	
+	<bean id="gridsets" class="org.geoserver.egeosmanager.Gridsets" scope="prototype">
+		<constructor-arg ref="gwcGridSetBroker"/>
 	</bean>
 
-	<bean id="egeosMapping" class="org.geoserver.rest.RESTMapping">
+	<bean id="egeosMapping" class="org.geoserver.egeosmanager.rest.EgeosRestMapping">
 		<property name="routes">
 			<map>
 				<entry>
-					<key>
-						<value>/users.{format}</value>
-					</key>
+					<key><value>/users.json</value></key>
 					<value>users</value>
 				</entry>
-
 				<entry>
-					<key>
-						<value>/groups.{format}</value>
-					</key>
+					<key><value>/groups.json</value></key>
 					<value>groups</value>
 				</entry>
-
 				<entry>
-					<key>
-						<value>/members.{format}</value>
-					</key>
+					<key><value>/members.json</value></key>
 					<value>members</value>
 				</entry>
-
 				<entry>
-					<key>
-						<value>/roles.{format}</value>
-					</key>
+					<key><value>/roles.json</value></key>
 					<value>roles</value>
 				</entry>
-
 				<entry>
-					<key>
-						<value>/userrolerefs.{format}</value>
-					</key>
+					<key><value>/userrolerefs.json</value></key>
 					<value>userrolerefs</value>
 				</entry>
-
 				<entry>
-					<key>
-						<value>/grouprolerefs.{format}</value>
-					</key>
+					<key><value>/grouprolerefs.json</value></key>
 					<value>grouprolerefs</value>
 				</entry>
-
 				<entry>
-					<key>
-						<value>/rules.{format}</value>
-					</key>
+					<key><value>/rules.json</value></key>
 					<value>rules</value>
 				</entry>
-
 				<entry>
-					<key>
-						<value>/layertree.{format}</value>
-					</key>
+					<key><value>/layertree.json</value></key>
 					<value>layertree</value>
 				</entry>
-
+				<entry>
+					<key><value>/gridsets.json</value></key>
+					<value>gridsets</value>
+				</entry>
 			</map>
 		</property>
 	</bean>
-
-
+	
+	<bean id="egeosmanagerPanel" class="org.geoserver.web.MenuPageInfo">
+      <property name="id" value="egeosmanagerPanel"/>
+      <property name="titleKey" value="EgeosManagerPanel.page.title"/>
+      <property name="descriptionKey" value="EgeosManagerPanel.page.description"/>
+      <property name="componentClass" value="org.geoserver.egeosmanager.web.EgeosManagerPanel"/>
+      <property name="category" ref="aboutStatusCategory"/>
+      <property name="icon" value="img/e-geos.png"/>
+      <property name="authorizer" ref="workspaceAdminAuthorizer"/>
+    </bean>
+	
 </beans>

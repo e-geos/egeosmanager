@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.geoserver.egeosmanager.abstracts.UsersXMLResource;
+import org.geoserver.egeosmanager.annotations.Help;
+import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
 
 /**
@@ -13,7 +15,7 @@ import org.geoserver.rest.format.DataFormat;
  * Users is a REST Callable for manage users.
  * 
  */
-
+@Help(text="This method allow to manage users on Geoserver.")
 public class Users extends UsersXMLResource {	
 	public static String LOGIN_KEY="login";
 	public static String PASSWORD_KEY="password";
@@ -37,6 +39,9 @@ public class Users extends UsersXMLResource {
 	/*
 	 * Returns the list of users 
 	 */
+	@Help(
+		text="Returns a JSON array of user names."		
+	)
 	protected Object handleGetBody(DataFormat format) throws Exception{
 		return manager.getUsers();
 	}
@@ -44,6 +49,13 @@ public class Users extends UsersXMLResource {
 	/*
 	 * Add a user with <login> and <password> in users.xml
 	 */
+	@Help(
+		text="Creates a new user on Geoserver.",
+		requires = {
+			@Parameter(name="login",description="a new username you want to create on geoserver."),
+			@Parameter(name="password",description="a password related username."),
+		}
+	)
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String login = params.get(REQUIRED).get(LOGIN_KEY);
 		String pwd = params.get(REQUIRED).get(PASSWORD_KEY);
@@ -55,6 +67,12 @@ public class Users extends UsersXMLResource {
 	/*
 	 * Remove a user from in users.xml
 	 */
+	@Help(
+		text="Removes a user from Geoserver.",
+		requires = {
+			@Parameter(name="login",description="a username you want to delete on geoserver."),
+		}
+	)
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String login = params.get(REQUIRED).get(LOGIN_KEY);
 		manager.delUser(login);

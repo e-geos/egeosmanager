@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<wicket:panel xmlns:wicket="http://wicket.apache.org">
+	<div style="margin: 1em">
+		<form>
+			<fieldset style="margin-top: 2em;">
+				<legend><span wicket:id="title"></span></legend>
+				<div style="margin-top: 1em;" wicket:id="description"></div>		
+			</fieldset>
+		</form>
+
+		<form>
+			<fieldset style="margin-top: 1em;">
+				<legend><span>Required Parameters</span></legend>		
+				<div wicket:id="required_table"></div>
+			</fieldset>
+		</form>
+		
+		<form>
+			<fieldset style="margin-top: 1em;">
+				<legend><span>Optional Parameters</span></legend>		
+				<div wicket:id="optional_table"></div>
+			</fieldset>
+		</form>
+	</div>		
+</wicket:panel>

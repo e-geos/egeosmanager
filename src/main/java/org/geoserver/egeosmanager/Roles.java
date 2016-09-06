@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.geoserver.egeosmanager.abstracts.RolesXMLResource;
+import org.geoserver.egeosmanager.annotations.Help;
+import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
 
 /**
@@ -13,7 +15,7 @@ import org.geoserver.rest.format.DataFormat;
  * Roles is a REST Callable for manage roles.
  * 
  */
-
+@Help(text="This method allow to manage roles on Geoserver.")
 public class Roles extends RolesXMLResource {	
 	public static String ID_KEY="id";
 	public static String PARENT_KEY="parent_id"; 
@@ -37,6 +39,9 @@ public class Roles extends RolesXMLResource {
 	/*
 	 * Returns the list of roles
 	 */
+	@Help(
+		text="Returns a JSON array of role names."		
+	)	
 	protected Object handleGetBody(DataFormat format) throws Exception{
 		return manager.getRoles();
 	}
@@ -44,6 +49,15 @@ public class Roles extends RolesXMLResource {
 	/*
 	 * Add a role with <id> (and optionally a <parent>) in roles.xml
 	 */
+	@Help(
+		text="Creates a new role on Geoserver.",
+		requires = {
+			@Parameter(name="id",description="the name of the role you want to create on geoserver."),
+		},
+		optionals = {
+			@Parameter(name="parent_id",description="the name of the parent role, if exists.")
+		}
+	)		
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String id = params.get(REQUIRED).get(ID_KEY);
 		String parent = params.get(OPTIONAL).get(PARENT_KEY);
@@ -55,6 +69,12 @@ public class Roles extends RolesXMLResource {
 	/*
 	 * Remove a role with <id> in roles.xml
 	 */
+	@Help(
+		text="Remove a role on Geoserver.",
+		requires = {
+			@Parameter(name="id",description="the name of the role you want to remove from geoserver."),
+		}
+	)	
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String id = params.get(REQUIRED).get(ID_KEY);
 		manager.delRole(id);

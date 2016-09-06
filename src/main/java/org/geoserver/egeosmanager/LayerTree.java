@@ -16,9 +16,19 @@ import org.geoserver.catalog.WMSLayerInfo;
 import org.geoserver.catalog.WMSStoreInfo;
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.egeosmanager.abstracts.RemoteResource;
+import org.geoserver.egeosmanager.annotations.Help;
 import org.geoserver.rest.format.DataFormat;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.referencing.CRS;
 
+/**
+ * 
+ * @author Federico C. Guizzardi - cippinofg <at> gmail.com
+ * 
+ * LayerTree is a REST Callable for see all layers
+ * 
+ */
+@Help(text="This method allow to see all layers on Geoserver.")
 public class LayerTree extends RemoteResource{		
 	private Catalog catalog;
 		
@@ -36,29 +46,36 @@ public class LayerTree extends RemoteResource{
 		return false;
 	}
 
+	@Help(
+		text="Returns a JSON object with all layers divided by store type."		
+	)
 	@Override
 	protected Object handleGetBody(DataFormat format) throws Exception {
 		return new JSONObject(){{
 			put("layers",new JSONObject(){{
 				put("featureTypes",new JSONArray(){{
-					for (FeatureTypeInfo l:catalog.getFeatureTypes())						
-						put(layer2json(l));										
+					for (FeatureTypeInfo l:catalog.getFeatureTypes())	
+						if(l.isEnabled())
+							put(layer2json(l));										
 				}});
 				
 				put("coverages",new JSONArray(){{
 					for(CoverageInfo l:catalog.getCoverages())
-						put(layer2json(l));
+						if(l.isEnabled())
+							put(layer2json(l));
 				}});
 				
 				put("wmsLayers",new JSONArray(){{					
 					for(WMSLayerInfo l:catalog.getResources(WMSLayerInfo.class))
-						put(layer2json(l));
+						if(l.isEnabled())
+							put(layer2json(l));
 				}});
 				
 				put("layergroups",new JSONArray(){{								
 					for(LayerGroupInfo l:catalog.getLayerGroups())
 						put(layer2json(l));
 				}});
+
 			}});			
 		}};
 	}
@@ -125,15 +142,20 @@ public class LayerTree extends RemoteResource{
 		}};
 	}
 	 
-	private JSONObject bbox2json(final ReferencedEnvelope nbb) throws JSONException{
+	private JSONObject bbox2json(final ReferencedEnvelope nbb,final String srs) throws JSONException{
 		return new JSONObject(){{
 			put("minx",nbb.getMinX());
 			put("maxx",nbb.getMaxX());
 			put("miny",nbb.getMinY());
 			put("maxy",nbb.getMaxY());
-			put("crs",new JSONObject(){{
+			put("crs",new JSONObject(){{			
 				put("@class","projected");
-				put("$",nbb.getCoordinateReferenceSystem().getName());
+				try {
+					put("$",CRS.toSRS(nbb.getCoordinateReferenceSystem()));
+				} 
+				catch (NullPointerException|JSONException e) {
+					put("$",srs);
+				}
 			}});
 		}};
 	}
@@ -145,7 +167,7 @@ public class LayerTree extends RemoteResource{
 			String t = l.getTitle();
 			put("title",t!=null?t:l.getName());			
 			put("srs",l.getSRS());
-			put("nativeBoundingBox",bbox2json(l.getNativeBoundingBox()));
+			put("nativeBoundingBox",bbox2json(l.getNativeBoundingBox(),l.getSRS()));
 			put("store",store2json(l.getStore()));	
 			put("workspace",workspace2json(l.getStore().getWorkspace()));
 		}};
@@ -158,7 +180,7 @@ public class LayerTree extends RemoteResource{
 			String t = l.getTitle();
 			put("title",t!=null?t:l.getName());			
 			put("srs",l.getSRS());
-			put("nativeBoundingBox",bbox2json(l.getNativeBoundingBox()));
+			put("nativeBoundingBox",bbox2json(l.getNativeBoundingBox(),l.getSRS()));
 			put("store",store2json(l.getStore()));		
 			put("workspace",workspace2json(l.getStore().getWorkspace()));
 		}};
@@ -171,7 +193,7 @@ public class LayerTree extends RemoteResource{
 			String t = l.getTitle();
 			put("title",t!=null?t:l.getName());			
 			put("srs",l.getSRS());
-			put("nativeBoundingBox",bbox2json(l.getNativeBoundingBox()));
+			put("nativeBoundingBox",bbox2json(l.getNativeBoundingBox(),l.getSRS()));
 			put("store",store2json(l.getStore()));	
 			put("workspace",workspace2json(l.getStore().getWorkspace()));
 		}};
@@ -182,9 +204,11 @@ public class LayerTree extends RemoteResource{
 			put("name",l.getName());
 			put("nativeName", l.getName());
 			String t = l.getTitle();
-			put("title",t!=null?t:l.getName());			
-			put("srs",l.getBounds().getCoordinateReferenceSystem().getName());
-			put("nativeBoundingBox",bbox2json(l.getBounds()));
+			put("title",t!=null?t:l.getName());	
+			ReferencedEnvelope bb = l.getBounds();
+			String srs=CRS.toSRS(bb.getCoordinateReferenceSystem());
+			put("srs",srs);
+			put("nativeBoundingBox",bbox2json(bb,srs));
 			put("store",new JSONObject());
 			put("workspace",workspace2json(l.getWorkspace()));
 		}};

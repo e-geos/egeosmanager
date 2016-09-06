@@ -87,7 +87,7 @@ public abstract class RemoteResource extends AbstractResource {
 	//Actions made after a DELETE is received
 	//checks made before (in handleDelete): presence and vality of parameter, manager presence
 	protected abstract void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception;
-
+	
 	/*
 	 * Format available: only JSon is available
 	 */
