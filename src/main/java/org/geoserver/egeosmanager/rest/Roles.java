@@ -1,12 +1,18 @@
-package org.geoserver.egeosmanager;
+package org.geoserver.egeosmanager.rest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.geoserver.egeosmanager.abstracts.RolesXMLResource;
+import org.geoserver.egeosmanager.abstracts.UserGroupRoleRemoteResource;
 import org.geoserver.egeosmanager.annotations.Help;
 import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
+import org.geoserver.security.GeoServerRoleService;
+import org.geoserver.security.GeoServerRoleStore;
+import org.geoserver.security.GeoServerSecurityManager;
+import org.geoserver.security.config.SecurityRoleServiceConfig;
+import org.geoserver.security.impl.GeoServerRole;
+import org.json.JSONArray;
 
 /**
  * 
@@ -16,10 +22,14 @@ import org.geoserver.rest.format.DataFormat;
  * 
  */
 @Help(text="This method allow to manage roles on Geoserver.")
-public class Roles extends RolesXMLResource {	
+public class Roles extends UserGroupRoleRemoteResource {	
 	public static String ID_KEY="id";
 	public static String PARENT_KEY="parent_id"; 
 
+	public Roles(GeoServerSecurityManager authenticationManager) {
+		super(authenticationManager);
+	}
+	
 	/*
 	 * Enable POST
 	 */
@@ -39,11 +49,16 @@ public class Roles extends RolesXMLResource {
 	/*
 	 * Returns the list of roles
 	 */
-	@Help(
-		text="Returns a JSON array of role names."		
-	)	
+	@Help(text="Returns a JSON array of role names.")	
 	protected Object handleGetBody(DataFormat format) throws Exception{
-		return manager.getRoles();
+        return new JSONArray(){{
+        	for (String ugServiceName : authenticationManager.listRoleServices()) {
+                SecurityRoleServiceConfig config = authenticationManager.loadRoleServiceConfig(ugServiceName);                      
+                GeoServerRoleService ugs = loadRoleService(config.getName());                                        
+            	for(final GeoServerRole u:ugs.getRoles())
+            		put(u.getAuthority());
+    		}
+        }};
 	}
 	
 	/*
@@ -61,8 +76,16 @@ public class Roles extends RolesXMLResource {
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String id = params.get(REQUIRED).get(ID_KEY);
 		String parent = params.get(OPTIONAL).get(PARENT_KEY);
-		manager.addRole(id,parent);
-		manager.save();
+
+		GeoServerRoleService ugs = loadRoleService();
+		GeoServerRoleStore store = getStore(ugs);
+		
+		GeoServerRole role = ugs.createRoleObject(id);
+		store.addRole(role);
+		if (parent!=null)
+			store.setParentRole(role,store.getRoleByName(parent));	
+
+		store.store();			
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 	
@@ -77,8 +100,16 @@ public class Roles extends RolesXMLResource {
 	)	
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String id = params.get(REQUIRED).get(ID_KEY);
-		manager.delRole(id);
-		manager.save();
+
+		GeoServerRoleService ugs = loadRoleService();
+		GeoServerRoleStore store = getStore(ugs);
+		
+		GeoServerRole u = store.getRoleByName(id);
+		if (u!=null){
+			store.removeRole(u);
+			store.store();
+		}
+		
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 

@@ -1,16 +1,32 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
 <beans>
-	<bean id="users" class="org.geoserver.egeosmanager.Users" scope="prototype" />
-	<bean id="groups" class="org.geoserver.egeosmanager.Groups" scope="prototype" />
-	<bean id="members" class="org.geoserver.egeosmanager.Members" scope="prototype" />
-	<bean id="roles" class="org.geoserver.egeosmanager.Roles" scope="prototype" />
-	<bean id="userrolerefs" class="org.geoserver.egeosmanager.UserRoleRefs" scope="prototype" />
-	<bean id="grouprolerefs" class="org.geoserver.egeosmanager.GroupRoleRefs" scope="prototype" />
-	<bean id="rules" class="org.geoserver.egeosmanager.Rules" scope="prototype" />
-	<bean id="layertree" class="org.geoserver.egeosmanager.LayerTree" scope="prototype"> 
+	<!-- UserGroupService -->
+	<bean id="users" class="org.geoserver.egeosmanager.rest.Users" scope="prototype">
+		<constructor-arg ref="authenticationManager"/>
+	</bean>
+	<bean id="groups" class="org.geoserver.egeosmanager.rest.Groups" scope="prototype">
+		<constructor-arg ref="authenticationManager"/>
+	</bean>
+	<bean id="members" class="org.geoserver.egeosmanager.rest.Members" scope="prototype">
+		<constructor-arg ref="authenticationManager"/>
+	</bean>
+	
+	<bean id="roles" class="org.geoserver.egeosmanager.rest.Roles" scope="prototype">
+		<constructor-arg ref="authenticationManager"/>
+	</bean>	
+	<bean id="userrolerefs" class="org.geoserver.egeosmanager.rest.UserRoleRefs" scope="prototype">
+		<constructor-arg ref="authenticationManager"/>
+	</bean>
+	<bean id="grouprolerefs" class="org.geoserver.egeosmanager.rest.GroupRoleRefs" scope="prototype">
+		<constructor-arg ref="authenticationManager"/>
+	</bean>
+	
+	<bean id="rules" class="org.geoserver.egeosmanager.rest.Rules" scope="prototype" />
+	
+	<bean id="layertree" class="org.geoserver.egeosmanager.rest.LayerTree" scope="prototype"> 
 		<constructor-arg ref="catalog"/>
 	</bean>	
-	<bean id="gridsets" class="org.geoserver.egeosmanager.Gridsets" scope="prototype">
+	<bean id="gridsets" class="org.geoserver.egeosmanager.rest.Gridsets" scope="prototype">
 		<constructor-arg ref="gwcGridSetBroker"/>
 	</bean>
 

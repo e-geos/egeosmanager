@@ -1,12 +1,18 @@
-package org.geoserver.egeosmanager;
+package org.geoserver.egeosmanager.rest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.geoserver.egeosmanager.abstracts.UsersXMLResource;
+import org.geoserver.egeosmanager.abstracts.UserGroupRoleRemoteResource;
 import org.geoserver.egeosmanager.annotations.Help;
 import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
+import org.geoserver.security.GeoServerSecurityManager;
+import org.geoserver.security.GeoServerUserGroupService;
+import org.geoserver.security.GeoServerUserGroupStore;
+import org.geoserver.security.config.SecurityUserGroupServiceConfig;
+import org.geoserver.security.impl.GeoServerUserGroup;
+import org.json.JSONArray;
 
 /**
  * 
@@ -16,8 +22,12 @@ import org.geoserver.rest.format.DataFormat;
  * 
  */
 @Help(text="This method allow to manage groups on Geoserver.")
-public class Groups extends UsersXMLResource {
+public class Groups extends UserGroupRoleRemoteResource {
 	public static String NAME_KEY="name";
+	
+	public Groups(GeoServerSecurityManager authenticationManager) {
+		super(authenticationManager);
+	}
 	
 	/*
 	 * Enable POST
@@ -38,11 +48,16 @@ public class Groups extends UsersXMLResource {
 	/*
 	 * Returns the list of groups 
 	 */
-	@Help(
-		text="Returns a JSON array of group names."		
-	)
+	@Help(text="Returns a JSON array of group names.")
 	protected Object handleGetBody(DataFormat format) throws Exception{
-		return manager.getGroups();
+		return new JSONArray(){{
+        	for (String ugServiceName : authenticationManager.listUserGroupServices()) {
+                SecurityUserGroupServiceConfig config = authenticationManager.loadUserGroupServiceConfig(ugServiceName);                      
+                GeoServerUserGroupService ugs = loadUserGroupService(config.getName());                                        
+            	for(final GeoServerUserGroup g:ugs.getUserGroups())
+            		put(g.getGroupname());
+    		}
+        }};
 	}
 	
 	/*
@@ -56,8 +71,9 @@ public class Groups extends UsersXMLResource {
 	)	
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String name = params.get(REQUIRED).get(NAME_KEY);
-		manager.addGroup(name);
-		manager.save();
+	
+		createGroupObjectAndStore(getStore(),name);
+		
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 	
@@ -72,8 +88,14 @@ public class Groups extends UsersXMLResource {
 	)	
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String name = params.get(REQUIRED).get(NAME_KEY);
-		manager.delGroup(name);
-		manager.save();
+		
+		GeoServerUserGroupStore store = getStore();
+		
+		GeoServerUserGroup g = store.getGroupByGroupname(name);
+		if (g!=null){
+			store.removeGroup(g);
+			store.store();
+		}
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 
@@ -91,7 +113,6 @@ public class Groups extends UsersXMLResource {
 		return null;
 	}
 
-	
 	@SuppressWarnings("serial")
 	@Override
 	protected ArrayList<String> getDELETEReq() {
@@ -99,7 +120,6 @@ public class Groups extends UsersXMLResource {
 			add(NAME_KEY);
 		}};
 	}
-	
 
 	@Override
 	protected ArrayList<String> getDELETEOpt() {

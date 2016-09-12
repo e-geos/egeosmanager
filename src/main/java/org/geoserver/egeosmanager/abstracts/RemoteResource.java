@@ -136,37 +136,8 @@ public abstract class RemoteResource extends AbstractResource {
 	 * Missing are all parameters in getPOSTReq() list that are not in request;
 	 * Form are all parameters in request, useful for debug
 	 */
-	@SuppressWarnings("serial")
-	protected HashMap<String,HashMap<String,String>> parsePostForm(){
-		ArrayList<String> req = getPOSTReq();
-		ArrayList<String> opt = getPOSTOpt();
-		
-		HashMap<String, HashMap<String,String>> res = new HashMap<String,HashMap<String,String>>(){{
-			put(MISSING,new HashMap<String,String>());
-			put(REQUIRED,new HashMap<String,String>());
-			put(OPTIONAL,new HashMap<String,String>());
-			put(FORM,new HashMap<String,String>());
-		}};
-		Form ff = getRequest().getEntityAsForm();
-		for(String k:ff.getNames())
-			res.get(FORM).put(k,ff.getFirstValue(k));
-		
-		String v;
-		if(req!=null)
-			for(String k:req){				
-				v = ff.getFirstValue(k);
-				if(v!=null && !v.isEmpty())
-					res.get(REQUIRED).put(k,v);
-				else
-					res.get(MISSING).put(k,null);
-			}			
-		if(opt!=null)
-			for(String k:opt){
-				v = ff.getFirstValue(k);
-				if(v!=null && !v.isEmpty())
-					res.get(OPTIONAL).put(k,v);
-			}					
-		return res;
+	protected HashMap<String,HashMap<String,String>> parsePostForm(){				
+		return parseForm(getPOSTReq(), getPOSTOpt());
 	}
 
 	/*
@@ -175,35 +146,47 @@ public abstract class RemoteResource extends AbstractResource {
 	 * Optional are all parameters in getDELETEOpt() list: they are not necessary, so any use needs a test of presence;
 	 * Missing are all parameters in getDELETEReq() list that are not in request;
 	 * Form are all parameters in request, useful for debug
-	 */
-	@SuppressWarnings("serial")
+	 */	
 	protected HashMap<String,HashMap<String,String>> parseDeleteForm(){
-		ArrayList<String> req = getDELETEReq();
-		ArrayList<String> opt = getDELETEOpt();
-
+		return parseForm(getDELETEReq(),getDELETEOpt());
+	}
+	
+	@SuppressWarnings("serial")
+	private HashMap<String,HashMap<String,String>> parseForm(ArrayList<String> req,ArrayList<String> opt){		
+		final Form ff = getRequest().getEntityAsForm();
+		Map<String, Object> att = getRequest().getAttributes();
+		final Map<String, String> qp = parseQuery((String)att.get("q"));
+				
 		HashMap<String, HashMap<String,String>> res = new HashMap<String,HashMap<String,String>>(){{
 			put(MISSING,new HashMap<String,String>());
 			put(REQUIRED,new HashMap<String,String>());
 			put(OPTIONAL,new HashMap<String,String>());
-			put(FORM,new HashMap<String,String>());
+			put(FORM,new HashMap<String,String>(){{
+				for(String k:qp.keySet())
+					put(k,qp.get(k));
+				
+				for(String k:ff.getNames())
+					put(k,ff.getFirstValue(k));						
+			}});			
 		}};
-		
-		Map<String, Object> att = getRequest().getAttributes();
-		Map<String, String> qp = parseQuery((String)att.get("q"));
-		for(String k:qp.keySet())
-			res.get(FORM).put(k,qp.get(k));
-		
+				
 		if(req!=null)
 			for(String k:req){
-				String v=qp.get(k);
+				String v = ff.getFirstValue(k);
+				if (v==null || v.isEmpty())
+					v = qp.get(k);
+				
 				if(v!=null && !v.isEmpty())
 					res.get(REQUIRED).put(k,v);
 				else
-					res.get(MISSING).put(k,null);						
+					res.get(MISSING).put(k,null);			
 			}			
 		if(opt!=null)
 			for(String k:opt){
-				String v = qp.get(k);
+				String v = ff.getFirstValue(k);
+				if (v==null || v.isEmpty())
+					v = qp.get(k);
+
 				if(v!=null && !v.isEmpty())
 					res.get(OPTIONAL).put(k,v);
 			}					
@@ -214,20 +197,21 @@ public abstract class RemoteResource extends AbstractResource {
 	 * Produces a hashmap from a query string
 	 */
 	@SuppressWarnings("serial")
-	protected HashMap<String,String> parseQuery(final String s){	
+	protected HashMap<String,String> parseQuery(final String s){			
 		return new HashMap<String, String>(){{
-			for (String r:s.split("&")){
-				try{			
-					String[] kv=r.split("=");					
-					String v=Reference.decode(kv[1]);
-					if(v.matches("\\[.*\\]"))					
-						v=v.length()>2?v.substring(1, v.length()-1):null;						
-					put(kv[0],v);				
+			if (s!=null && !s.trim().isEmpty())
+				for (String r:s.split("&")){
+					try{			
+						String[] kv=r.split("=");					
+						String v=Reference.decode(kv[1]);
+						if(v.matches("\\[.*\\]"))					
+							v=v.length()>2?v.substring(1, v.length()-1):null;						
+						put(kv[0],v);				
+					}
+					catch (Exception e){
+						//can't parse parameters so nothing is added					
+					}
 				}
-				catch (Exception e){
-					//can't parse parameters so nothing is added					
-				}
-			}
 		}};
 	}
 

@@ -1,12 +1,21 @@
-package org.geoserver.egeosmanager;
+package org.geoserver.egeosmanager.rest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.geoserver.egeosmanager.abstracts.RolesXMLResource;
+import org.geoserver.egeosmanager.abstracts.UserGroupRoleRemoteResource;
 import org.geoserver.egeosmanager.annotations.Help;
 import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
+import org.geoserver.security.GeoServerRoleService;
+import org.geoserver.security.GeoServerRoleStore;
+import org.geoserver.security.GeoServerSecurityManager;
+import org.geoserver.security.GeoServerUserGroupService;
+import org.geoserver.security.config.SecurityUserGroupServiceConfig;
+import org.geoserver.security.impl.GeoServerRole;
+import org.geoserver.security.impl.GeoServerUser;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * 
@@ -16,9 +25,13 @@ import org.geoserver.rest.format.DataFormat;
  * 
  */
 @Help(text="This method allow to manage users/roles relation on Geoserver.")
-public class UserRoleRefs extends RolesXMLResource {	
+public class UserRoleRefs extends UserGroupRoleRemoteResource {	
 	public static String USERNAME_KEY="username";
 	public static String ROLE_KEY="roleID"; 
+
+	public UserRoleRefs(GeoServerSecurityManager authenticationManager) {
+		super(authenticationManager);
+	}
 	
 	/*
 	 * Enable POST
@@ -39,11 +52,20 @@ public class UserRoleRefs extends RolesXMLResource {
 	/*
 	 * Returns the list of users rolerefs 
 	 */
-	@Help(
-		text="Returns a JSON object with user names as keys and a list of roles as value."		
-	)
+	@Help(text="Returns a JSON object with user names as keys and a list of roles as value.")
 	protected Object handleGetBody(DataFormat format) throws Exception{
-		return manager.getUserRoleRef();
+		return new JSONObject(){{
+			final GeoServerRoleService role_service = loadRoleService();
+        	for (String ugServiceName : authenticationManager.listUserGroupServices()) {
+                SecurityUserGroupServiceConfig config = authenticationManager.loadUserGroupServiceConfig(ugServiceName);                      
+                GeoServerUserGroupService ugs = loadUserGroupService(config.getName());                                        
+            	for(final GeoServerUser u:ugs.getUsers())
+            		put(u.getUsername(),new JSONArray(){{
+            			for(GeoServerRole r:role_service.getRolesForUser(u.getUsername()))
+            				put(r.getAuthority());
+            		}});
+    		}
+        }};
 	}
 	
 	/*
@@ -59,8 +81,12 @@ public class UserRoleRefs extends RolesXMLResource {
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String usr = params.get(REQUIRED).get(USERNAME_KEY);
 		String role = params.get(REQUIRED).get(ROLE_KEY);
-		manager.addRoleToUser(role,usr); //this force role creation
-		manager.save();
+		
+		GeoServerRoleService role_service = loadRoleService();		
+		GeoServerRoleStore store = getStore(role_service);		
+		store.associateRoleToUser(role_service.getRoleByName(role),usr);
+		store.store();
+		
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 
@@ -77,8 +103,11 @@ public class UserRoleRefs extends RolesXMLResource {
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String usr = params.get(REQUIRED).get(USERNAME_KEY);
 		String role = params.get(REQUIRED).get(ROLE_KEY);
-		manager.delRoleRefFromUser(role, usr);
-		manager.save();
+
+		GeoServerRoleService role_service = loadRoleService();		
+		GeoServerRoleStore store = getStore(role_service);		
+		store.disAssociateRoleFromUser(role_service.getRoleByName(role),usr);
+		store.store();
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 

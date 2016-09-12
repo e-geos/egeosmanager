@@ -1,12 +1,18 @@
-package org.geoserver.egeosmanager;
+package org.geoserver.egeosmanager.rest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.geoserver.egeosmanager.abstracts.UsersXMLResource;
+import org.geoserver.egeosmanager.abstracts.UserGroupRoleRemoteResource;
 import org.geoserver.egeosmanager.annotations.Help;
 import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
+import org.geoserver.security.GeoServerSecurityManager;
+import org.geoserver.security.GeoServerUserGroupService;
+import org.geoserver.security.GeoServerUserGroupStore;
+import org.geoserver.security.config.SecurityUserGroupServiceConfig;
+import org.geoserver.security.impl.GeoServerUser;
+import org.json.JSONArray;
 
 /**
  * 
@@ -16,10 +22,14 @@ import org.geoserver.rest.format.DataFormat;
  * 
  */
 @Help(text="This method allow to manage users on Geoserver.")
-public class Users extends UsersXMLResource {	
+public class Users extends UserGroupRoleRemoteResource {			
 	public static String LOGIN_KEY="login";
 	public static String PASSWORD_KEY="password";
 	
+	public Users(GeoServerSecurityManager authenticationManager) {
+		super(authenticationManager);
+	}
+
 	/*
 	 * Enable POST
 	 */
@@ -39,11 +49,16 @@ public class Users extends UsersXMLResource {
 	/*
 	 * Returns the list of users 
 	 */
-	@Help(
-		text="Returns a JSON array of user names."		
-	)
+	@Help(text="Returns a JSON array of user names.")
 	protected Object handleGetBody(DataFormat format) throws Exception{
-		return manager.getUsers();
+        return new JSONArray(){{
+        	for (String ugServiceName : authenticationManager.listUserGroupServices()) {
+                SecurityUserGroupServiceConfig config = authenticationManager.loadUserGroupServiceConfig(ugServiceName);                      
+                GeoServerUserGroupService ugs = loadUserGroupService(config.getName());                                        
+            	for(final GeoServerUser u:ugs.getUsers())
+            		put(u.getUsername());
+    		}
+        }};
 	}
 	
 	/*
@@ -58,9 +73,8 @@ public class Users extends UsersXMLResource {
 	)
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String login = params.get(REQUIRED).get(LOGIN_KEY);
-		String pwd = params.get(REQUIRED).get(PASSWORD_KEY);
-		manager.addUser(login, pwd);
-		manager.save();
+		String pwd = params.get(REQUIRED).get(PASSWORD_KEY);	
+		createUserObjectAndStore(getStore(),login, pwd);
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 	
@@ -75,8 +89,14 @@ public class Users extends UsersXMLResource {
 	)
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String login = params.get(REQUIRED).get(LOGIN_KEY);
-		manager.delUser(login);
-		manager.save();
+		
+		GeoServerUserGroupStore store = getStore();
+		
+		GeoServerUser u = store.getUserByUsername(login);
+		if (u!=null){
+			store.removeUser(u);
+			store.store();
+		}
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 	

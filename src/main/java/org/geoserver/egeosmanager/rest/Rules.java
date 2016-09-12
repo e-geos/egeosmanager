@@ -1,16 +1,21 @@
-package org.geoserver.egeosmanager;
-
-import it.egeos.geoserver.utils.exceptions.RuleExistsException;
-import it.egeos.geoserver.utils.exceptions.RuleNotExistsException;
+package org.geoserver.egeosmanager.rest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.geoserver.egeosmanager.abstracts.RulesXMLResource;
+import org.geoserver.egeosmanager.abstracts.RemoteResource;
 import org.geoserver.egeosmanager.annotations.Help;
 import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
+import org.geoserver.security.AccessMode;
+import org.geoserver.security.impl.DataAccessRule;
+import org.geoserver.security.impl.DataAccessRuleDAO;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.restlet.data.Status;
 
 /**
  * 
@@ -20,13 +25,17 @@ import org.geoserver.rest.format.DataFormat;
  * 
  */
 @Help(text="This method allow to manage rules on Geoserver.")
-public class Rules extends RulesXMLResource{
-	public static String WORKSPACE_KEY="workspace";
-	public static String LAYER_KEY="layer";
-	public static String METHOD_KEY="method";
-	public static String ROLE_KEY="role";
-	public static String MISSING_KEY="missing";
-	public static String APPEND_KEY="append";
+public class Rules extends RemoteResource{
+	public static final String WORKSPACE_KEY="workspace";
+	public static final String LAYER_KEY="layer";
+	public static final String METHOD_KEY="method";
+	public static final String ROLE_KEY="role";
+	public static final String MISSING_KEY="missing";
+	public static final String APPEND_KEY="append";
+	
+	public static final char ADMIN='a'; 
+	public static final char READ='r';
+	public static final char WRITE='w';
 	
 	/*
 	 * Enable POST
@@ -51,7 +60,14 @@ public class Rules extends RulesXMLResource{
 		text="Returns a JSON object with rule paths as keys and a list of roles as value."		
 	)	
 	protected Object handleGetBody(DataFormat format) throws Exception{
-		return manager.getRules();
+		return new JSONObject(){{
+			DataAccessRuleDAO rulesDao =DataAccessRuleDAO.get();
+			for(final DataAccessRule r:rulesDao.getRules())
+				put(r.getKey(),new JSONArray(){{
+					for(String ru:r.getRoles())
+						put(ru);
+				}});
+		}};
 	}
 	
 	/*
@@ -76,18 +92,50 @@ public class Rules extends RulesXMLResource{
 		String ap = params.get(OPTIONAL).get(APPEND_KEY);
 		String ly = params.get(OPTIONAL).get(LAYER_KEY);
 		
-		ArrayList<String> roles = new ArrayList<String>(Arrays.asList(rl.split(",")));
-		try {
-			if (ap!=null && ap.trim().equalsIgnoreCase("true"))
-				manager.addToRule(ws,ly,md.charAt(0), roles);
-			else
-				manager.createRule(ws,ly, md.charAt(0), roles);
-		} 
-		catch (RuleExistsException e) {
-			manager.addToRule(ws,ly,md.charAt(0), roles);
+		if (ly==null || ly.trim().isEmpty())
+			ly="*";
+		
+		DataAccessRuleDAO rulesDao =DataAccessRuleDAO.get();
+		Set<String> roles = new HashSet<String>(Arrays.asList(rl.split(",")));
+		
+		AccessMode accessMode;
+		switch (md.charAt(0)) {
+		case ADMIN:
+			accessMode=AccessMode.ADMIN;
+			break;
+		case READ:
+			accessMode=AccessMode.READ;
+			break;
+		case WRITE:
+			accessMode=AccessMode.WRITE;
+			break;
+		default:
+			throw new Exception("Bad Access Mode '"+md+"': it should be "+ADMIN+" or "+WRITE+" or "+READ);
 		}
-		manager.save();
-		getResponse().setEntity(format.toRepresentation("ok"));
+		
+		DataAccessRule rule=new DataAccessRule(ws,ly, accessMode, roles);
+		DataAccessRule found =null;
+		
+		for(final DataAccessRule r:rulesDao.getRules())
+			found = r.equals(rule)?r:found;
+				
+		String res="ok";
+		if (ap!=null && ap.trim().equalsIgnoreCase("true")){
+			if (found!=null)
+				found.getRoles().addAll(roles);
+			else{
+				res="Rule '"+rule.getKey()+"' not found";
+				getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,res);				
+			}				
+		}
+		else if (found!=null)
+			found.getRoles().addAll(roles);
+		else
+			rulesDao.addRule(rule);
+					
+		rulesDao.storeRules();
+		
+		getResponse().setEntity(format.toRepresentation(res));
 	}
 	
 	/*
@@ -106,30 +154,52 @@ public class Rules extends RulesXMLResource{
 		}
 	)	
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
-		String res="ok";
 		String ws = params.get(REQUIRED).get(WORKSPACE_KEY);
 		String md = params.get(REQUIRED).get(METHOD_KEY);
 		String rl = params.get(OPTIONAL).get(ROLE_KEY);
 		String ms = params.get(OPTIONAL).get(MISSING_KEY);
 		String ly = params.get(OPTIONAL).get(LAYER_KEY);
 		
-		try {
-			if (rl!=null && rl.length()>0){
-				//if there are a list of roles, we remove only that set from a rule
-				ArrayList<String> roles = new ArrayList<String>(Arrays.asList(rl.split(",")));				
-				manager.delToRule(ws, ly, md.charAt(0),roles,true);
-			}
-			else
-				//no rules in parameters, so we delete the rule 
-				manager.deleteRule(ws, ly, md.charAt(0));
+		if (ly==null || ly.trim().isEmpty())
+			ly="*";
+		
+		DataAccessRuleDAO rulesDao =DataAccessRuleDAO.get();
+		
+		AccessMode accessMode;
+		switch (md.charAt(0)) {
+		case ADMIN:
+			accessMode=AccessMode.ADMIN;
+			break;
+		case READ:
+			accessMode=AccessMode.READ;
+			break;
+		case WRITE:
+			accessMode=AccessMode.WRITE;
+			break;
+		default:
+			throw new Exception("Bad Access Mode '"+md+"': it should be "+ADMIN+" or "+WRITE+" or "+READ);
 		}
-		catch (RuleNotExistsException e) {
-			if (ms!=null && ms.trim().equalsIgnoreCase("true"))
-				res=e.getMessage();				
+		
+		DataAccessRule rule=new DataAccessRule(ws,ly, accessMode);
+		DataAccessRule found =null;
+		
+		for(final DataAccessRule r:rulesDao.getRules())
+			found = r.equals(rule)?r:found;
+		
+		String res="ok";
+		if (found!=null){
+			if (rl!=null && rl.length()>0)
+				found.getRoles().removeAll(new HashSet<String>(Arrays.asList(rl.split(","))));			
 			else
-				throw e;
+				rulesDao.removeRule(found);
 		}
-		manager.save();
+		else{
+			res="Rule '"+rule.getKey()+"' not found";				
+			if (ms==null || !ms.trim().equalsIgnoreCase("true"))
+				getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,res);				
+		}
+				
+		rulesDao.storeRules();
 		getResponse().setEntity(format.toRepresentation(res));
 	}
 	

@@ -1,12 +1,20 @@
-package org.geoserver.egeosmanager;
+package org.geoserver.egeosmanager.rest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.geoserver.egeosmanager.abstracts.UsersXMLResource;
+import org.geoserver.egeosmanager.abstracts.UserGroupRoleRemoteResource;
 import org.geoserver.egeosmanager.annotations.Help;
 import org.geoserver.egeosmanager.annotations.Parameter;
 import org.geoserver.rest.format.DataFormat;
+import org.geoserver.security.GeoServerSecurityManager;
+import org.geoserver.security.GeoServerUserGroupService;
+import org.geoserver.security.GeoServerUserGroupStore;
+import org.geoserver.security.config.SecurityUserGroupServiceConfig;
+import org.geoserver.security.impl.GeoServerUser;
+import org.geoserver.security.impl.GeoServerUserGroup;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * 
@@ -16,11 +24,15 @@ import org.geoserver.rest.format.DataFormat;
  * 
  */
 @Help(text="This method allow to manage users/groups relation on Geoserver.")
-public class Members extends UsersXMLResource {	
+public class Members extends UserGroupRoleRemoteResource {	
 	public static String USER_KEY="username";
 	public static String GROUP_KEY="groupname";
 	public static String UNIQUE="force_unique";
-	
+
+	public Members(GeoServerSecurityManager authenticationManager) {
+		super(authenticationManager);
+	}	
+
 	/*
 	 * Enable POST
 	 */
@@ -40,11 +52,19 @@ public class Members extends UsersXMLResource {
 	/*
 	 * Returns the list of users/groups 
 	 */
-	@Help(
-		text="Returns a JSON object with group names as keys and a list of users as value."		
-	)
+	@Help(text="Returns a JSON object with group names as keys and a list of users as value.")
 	protected Object handleGetBody(DataFormat format) throws Exception{
-		return manager.getMembers();
+		return new JSONObject(){{
+			for (String ugServiceName : authenticationManager.listUserGroupServices()) {
+                SecurityUserGroupServiceConfig config = authenticationManager.loadUserGroupServiceConfig(ugServiceName);                      
+                final GeoServerUserGroupService ugs = loadUserGroupService(config.getName());                                        
+            	for(final GeoServerUserGroup g:ugs.getUserGroups())
+            		put(g.getGroupname(),new JSONArray(){{
+            			for(GeoServerUser u:ugs.getUsersForGroup(g))
+            				put(u.getUsername());
+            		}});
+    		}
+		}};
 	}
 	
 	/*
@@ -57,15 +77,27 @@ public class Members extends UsersXMLResource {
 			@Parameter(name="groupname",description="the name of the group you want to add to a user."),
 		},
 		optionals = {
-			@Parameter(name="force_unique",description="force to avoid duplication."),
+			@Parameter(name="force_unique",description="delete all other users."),
 		}
 	)		
 	protected void handlePostBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String login = params.get(REQUIRED).get(USER_KEY);
 		String group = params.get(REQUIRED).get(GROUP_KEY);
 		String unique= params.get(OPTIONAL).get(UNIQUE);
-		manager.addMember(login, group,Boolean.parseBoolean(unique));
-		manager.save();
+				
+		GeoServerUserGroupStore store = getStore();
+		GeoServerUser u = store.getUserByUsername(login);
+				
+		GeoServerUserGroup g = store.getGroupByGroupname(group);
+		if (g==null)
+			g=createGroupObjectAndStore(store,group);
+		
+		if (unique!=null && Boolean.parseBoolean(unique))
+			for(GeoServerUser s:store.getUsersForGroup(g))
+				store.disAssociateUserFromGroup(s, g);
+
+		store.associateUserToGroup(u, g);
+		store.store();
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 	
@@ -82,8 +114,10 @@ public class Members extends UsersXMLResource {
 	protected void handleDeleteBody(HashMap<String, HashMap<String, String>> params,DataFormat format) throws Exception{
 		String login = params.get(REQUIRED).get(USER_KEY);
 		String group = params.get(REQUIRED).get(GROUP_KEY);
-		manager.delMember(login, group);
-		manager.save();
+		
+		GeoServerUserGroupStore store = getStore();
+		store.disAssociateUserFromGroup(store.getUserByUsername(login), store.getGroupByGroupname(group));
+		store.store();
 		getResponse().setEntity(format.toRepresentation("ok"));
 	}
 

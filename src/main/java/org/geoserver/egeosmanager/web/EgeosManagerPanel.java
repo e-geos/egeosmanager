@@ -40,7 +40,6 @@ public class EgeosManagerPanel extends GeoServerSecuredPage {
 	 	
 	@SuppressWarnings("serial")
 	private List<String> dependencies = new ArrayList<String>(){{
-		add("it.egeos.geoserver.utils");
 		add("org.geoserver.printing");
 		add("org.geoserver.rest");
 		add("org.geoserver.web");

@@ -4,7 +4,7 @@
 
 	<artifactId>egeosmanager</artifactId>
 	<name>E-Geos Geoserver Manager</name>
-	<version>3.1</version>
+	<version>3.2</version>
 	<organization>
 		<name>E-Geos (http://www.e-geos.it)</name>
 		<url>http://www.e-geos.it</url>
@@ -12,7 +12,7 @@
 
 	<parent>
 		<groupId>org.geoserver</groupId>
-		<artifactId>web</artifactId>
+		<artifactId>community</artifactId>
 		<version>2.9.1</version>
 	</parent>
 
@@ -36,11 +36,12 @@
 			<artifactId>gs-web-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>it.egeos.geoserver</groupId>
-			<artifactId>egs-utils</artifactId>
-			<version>2.0</version>
+			<groupId>org.geoserver.web</groupId>
+			<artifactId>gs-web-sec-core</artifactId>
+			<version>${geoserver.version}</version>
 		</dependency>
 	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -64,12 +65,13 @@
 			</plugin>
 		</plugins>
 	</build>
+
 	<repositories>
 		<repository>
 			<id>Geoserver Repo</id>
 			<url>http://repo.boundlessgeo.com/main</url>
 		</repository>
-		
+
 		<repository>
 			<id>osgeo</id>
 			<name>Open Source Geospatial Foundation Repository</name>
