@@ -26,6 +26,11 @@
 	<bean id="layertree" class="org.geoserver.egeosmanager.rest.LayerTree" scope="prototype"> 
 		<constructor-arg ref="catalog"/>
 	</bean>	
+
+	<bean id="styletree" class="org.geoserver.egeosmanager.rest.StylesTree" scope="prototype"> 
+		<constructor-arg ref="catalog"/>
+	</bean>	
+
 	<bean id="gridsets" class="org.geoserver.egeosmanager.rest.Gridsets" scope="prototype">
 		<constructor-arg ref="gwcGridSetBroker"/>
 	</bean>
@@ -68,6 +73,10 @@
 				<entry>
 					<key><value>/gridsets.json</value></key>
 					<value>gridsets</value>
+				</entry>
+				<entry>
+					<key><value>/styletree.json</value></key>
+					<value>styletree</value>
 				</entry>
 			</map>
 		</property>

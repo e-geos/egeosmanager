@@ -33,7 +33,7 @@ public class LayerTree extends RemoteResource{
 	private Catalog catalog;
 		
 	public LayerTree(Catalog catalog){
-		this.catalog=catalog;
+		this.catalog=catalog;	
 	}
 
 	@Override
